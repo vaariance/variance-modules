@@ -16,7 +16,6 @@ dependencies:
     git:
       url: https://github.com/vaariance/variance-dart.git
       ref: EIP-7579-safes
-
   web3_signers: ^0.1.9
   web3dart: ^2.7.3
 
