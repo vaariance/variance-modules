@@ -1,5 +1,5 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-part of '../../module.dart';
+part of '../../../../../modules.dart';
 
 class OwnableExecutor extends ExecutorModuleInterface {
   OwnableExecutor(super.wallet);

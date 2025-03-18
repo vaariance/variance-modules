@@ -5,8 +5,10 @@ homepage: https://variance.space/
 repository: https://github.com/vaariance/variance_modules
 issue_tracker: https://github.com/vaariance/variance-modules/issues
 
+publish_to: none
+
 environment:
-  sdk: ^3.6.1
+  sdk: ^3.6.0
   flutter: ">=1.17.0"
 
 dependencies:

@@ -1,13 +1,7 @@
 import 'dart:typed_data';
+
 import 'package:variance_dart/variance_dart.dart'
-    show
-        Contract,
-        ModuleInit,
-        ModuleType,
-        Safe7579Abis,
-        SafeInitializer,
-        SmartWallet,
-        UserOperationResponse;
+    show Contract, ModuleType, Safe7579Abis, SmartWallet, UserOperationResponse;
 import 'package:web3dart/web3dart.dart';
 
 part 'executors.dart';
@@ -63,17 +57,4 @@ abstract interface class Base7579ModuleInterface {
     final tx = await wallet.uninstallModule(type, address, initData);
     await tx.wait();
   }
-}
-
-// This should be in a shared location accessible to both packages
-abstract class Safe7579InitializerInterface extends SafeInitializer {
-  EthereumAddress get launchpad;
-  Iterable<ModuleInit>? get validators;
-  Iterable<ModuleInit>? get executors;
-  Iterable<ModuleInit>? get fallbacks;
-  Iterable<ModuleInit>? get hooks;
-  Iterable<EthereumAddress>? get attesters;
-  int? get attestersThreshold;
-
-  Uint8List getLaunchpadInitData();
 }

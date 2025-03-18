@@ -1,4 +1,4 @@
-part of '../../module.dart';
+part of '../../../../../modules.dart';
 
 class SocialRecovery extends ValidatorModuleInterface {
   SocialRecovery(super.wallet);
