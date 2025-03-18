@@ -11,7 +11,8 @@ part 'validators.dart';
 abstract interface class Base7579ModuleInterface {
   final SmartWallet wallet;
 
-  Base7579ModuleInterface(this.wallet);
+  Base7579ModuleInterface(this.wallet)
+      : assert(wallet.is7579Enabled, 'SmartWallet must be a modular account!');
 
   // Module Name as defined in contract metadata
   String get name;
