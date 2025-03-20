@@ -126,6 +126,10 @@ class OwnableValidator extends ValidatorModuleInterface {
 
   // must be static
   static Uint8List getInitData() {
+    assert(_initThreshold > BigInt.zero,
+        ModuleVariablesNotSetError('OwnableValidator', 'threshold'));
+    assert(_initOwners.length >= _initThreshold.toInt(),
+        ModuleVariablesNotSetError('OwnableValidator', 'owners'));
     return abi.encode(["uint256", "address[]"], [_initThreshold, _initOwners]);
   }
 

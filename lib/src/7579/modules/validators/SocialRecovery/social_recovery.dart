@@ -92,6 +92,10 @@ class SocialRecovery extends ValidatorModuleInterface {
 
   // must be static
   static Uint8List getInitData() {
+    assert(_initThreshold > BigInt.zero,
+        ModuleVariablesNotSetError('SocialRecoveryValidator', 'threshold'));
+    assert(_initGuardians.length >= _initThreshold.toInt(),
+        ModuleVariablesNotSetError('SocialRecoveryValidator', 'guardians'));
     return abi
         .encode(["uint256", "address[]"], [_initThreshold, _initGuardians]);
   }

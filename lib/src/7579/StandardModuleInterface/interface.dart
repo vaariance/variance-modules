@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:variance_dart/variance_dart.dart'
     show Contract, ModuleType, Safe7579Abis, SmartWallet, UserOperationResponse;
+import 'package:web3_signers/web3_signers.dart';
 import 'package:web3dart/web3dart.dart';
 
 part 'executors.dart';
