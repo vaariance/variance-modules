@@ -1,7 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:variance_dart/variance_dart.dart'
-    show Contract, ModuleType, Safe7579Abis, SmartWallet, UserOperationResponse;
+    show
+        Contract,
+        ModuleType,
+        Safe7579Abis,
+        SmartWallet,
+        UserOperationReceipt,
+        UserOperationResponse;
 import 'package:web3_signers/web3_signers.dart';
 import 'package:web3dart/web3dart.dart';
 
@@ -48,15 +54,17 @@ abstract interface class Base7579ModuleInterface {
 
   // Installs self in the [SmartWallet] instance
   // reverts if already installed
-  Future<void> install() async {
+  Future<UserOperationReceipt?> install() async {
     final tx = await wallet.installModule(type, address, initData);
-    await tx.wait();
+    final receipt = await tx.wait();
+    return receipt;
   }
 
   // Uninstalls self from the [SmartWallet] instance
   // reverts if not installed
-  Future<void> uninstall() async {
+  Future<UserOperationReceipt?> uninstall() async {
     final tx = await wallet.uninstallModule(type, address, initData);
-    await tx.wait();
+    final receipt = await tx.wait();
+    return receipt;
   }
 }
