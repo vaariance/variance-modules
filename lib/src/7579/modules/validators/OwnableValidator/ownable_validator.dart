@@ -1,7 +1,15 @@
 part of '../../../../../modules.dart';
 
 class OwnableValidator extends ValidatorModuleInterface {
-  OwnableValidator(super.wallet);
+  final BigInt _initThreshold;
+
+  final List<EthereumAddress> _initOwners;
+
+  OwnableValidator(super.wallet, this._initThreshold, this._initOwners)
+      : assert(_initThreshold > BigInt.zero,
+            ModuleVariablesNotSetError('OwnableValidator', 'threshold')),
+        assert(_initOwners.length >= _initThreshold.toInt(),
+            ModuleVariablesNotSetError('OwnableValidator', 'owners'));
 
   @override
   EthereumAddress get address => getAddress();
@@ -113,23 +121,8 @@ class OwnableValidator extends ValidatorModuleInterface {
 
   final _deployedModule = OwnableValidatorContract(getAddress());
 
-  static BigInt _initThreshold = BigInt.zero;
-
-  static List<EthereumAddress> _initOwners = [];
-
-  // must be static
-  static void setInitVars(int threshold, List<EthereumAddress> owners) {
-    owners.sort((a, b) => a.hex.compareTo(b.hex));
-    _initThreshold = BigInt.from(threshold);
-    _initOwners = owners;
-  }
-
-  // must be static
-  static Uint8List getInitData() {
-    assert(_initThreshold > BigInt.zero,
-        ModuleVariablesNotSetError('OwnableValidator', 'threshold'));
-    assert(_initOwners.length >= _initThreshold.toInt(),
-        ModuleVariablesNotSetError('OwnableValidator', 'owners'));
+  @override
+  Uint8List getInitData() {
     return abi.encode(["uint256", "address[]"], [_initThreshold, _initOwners]);
   }
 

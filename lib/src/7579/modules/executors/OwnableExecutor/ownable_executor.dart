@@ -2,7 +2,13 @@
 part of '../../../../../modules.dart';
 
 class OwnableExecutor extends ExecutorModuleInterface {
-  OwnableExecutor(super.wallet);
+  final EthereumAddress _initialOwner;
+
+  OwnableExecutor(super.wallet, this._initialOwner)
+      : assert(_initialOwner != SENTINEL_ADDRESS,
+            'Owner cannot be SENTINEL_ADDRESS'),
+        assert(_initialOwner != Addresses.zeroAddress,
+            'Owner cannot be zero address');
 
   @override
   String get name => 'OwnableExecutor';
@@ -83,9 +89,9 @@ class OwnableExecutor extends ExecutorModuleInterface {
 
   final _deployedModule = OwnableExecutorContract(getAddress());
 
-  // must be static
-  static Uint8List getInitData() {
-    return getAddress().addressBytes;
+  @override
+  Uint8List getInitData() {
+    return _initialOwner.addressBytes;
   }
 
   // must be static

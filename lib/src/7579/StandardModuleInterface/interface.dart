@@ -7,6 +7,7 @@ import 'package:variance_dart/variance_dart.dart'
         Safe7579Abis,
         SmartWallet,
         UserOperationReceipt,
+        SENTINEL_ADDRESS,
         UserOperationResponse;
 import 'package:web3_signers/web3_signers.dart';
 import 'package:web3dart/web3dart.dart';
@@ -62,9 +63,20 @@ abstract interface class Base7579ModuleInterface {
 
   // Uninstalls self from the [SmartWallet] instance
   // reverts if not installed
-  Future<UserOperationReceipt?> uninstall() async {
-    final tx = await wallet.uninstallModule(type, address, initData);
+  Future<UserOperationReceipt?> uninstall([Uint8List? context]) async {
+    final deInitData = await getDeInitData(context);
+    final tx = await wallet.uninstallModule(type, address, deInitData);
     final receipt = await tx.wait();
     return receipt;
+  }
+
+  /// Returns the initialization data required for this module
+  ///
+  /// This data is used during module installation to properly configure
+  /// the module for the smart wallet
+  Uint8List getInitData();
+
+  Future<Uint8List> getDeInitData([Uint8List? context]) {
+    return Future.value(context ?? Uint8List(0));
   }
 }

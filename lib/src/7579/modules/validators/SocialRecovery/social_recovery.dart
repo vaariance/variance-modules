@@ -1,7 +1,15 @@
 part of '../../../../../modules.dart';
 
 class SocialRecovery extends ValidatorModuleInterface {
-  SocialRecovery(super.wallet);
+  final BigInt _initThreshold;
+
+  final List<EthereumAddress> _initGuardians;
+
+  SocialRecovery(super.wallet, this._initThreshold, this._initGuardians)
+      : assert(_initThreshold > BigInt.zero,
+            ModuleVariablesNotSetError('SocialRecoveryValidator', 'threshold')),
+        assert(_initGuardians.length >= _initThreshold.toInt(),
+            ModuleVariablesNotSetError('SocialRecoveryValidator', 'guardians'));
 
   @override
   EthereumAddress get address => getAddress();
@@ -79,23 +87,8 @@ class SocialRecovery extends ValidatorModuleInterface {
 
   final _deployedModule = SocialRecoveryContract(getAddress());
 
-  static BigInt _initThreshold = BigInt.zero;
-
-  static List<EthereumAddress> _initGuardians = [];
-
-  // must be static
-  static void setInitVars(int threshold, List<EthereumAddress> guardians) {
-    guardians.sort((a, b) => a.hex.compareTo(b.hex));
-    _initThreshold = BigInt.from(threshold);
-    _initGuardians = guardians;
-  }
-
-  // must be static
-  static Uint8List getInitData() {
-    assert(_initThreshold > BigInt.zero,
-        ModuleVariablesNotSetError('SocialRecoveryValidator', 'threshold'));
-    assert(_initGuardians.length >= _initThreshold.toInt(),
-        ModuleVariablesNotSetError('SocialRecoveryValidator', 'guardians'));
+  @override
+  Uint8List getInitData() {
     return abi
         .encode(["uint256", "address[]"], [_initThreshold, _initGuardians]);
   }

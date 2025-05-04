@@ -1,7 +1,12 @@
 part of '../../../../../modules.dart';
 
 class RegistryHook extends HookModuleInterface {
-  RegistryHook(super.wallet);
+  final EthereumAddress _initRegistry;
+
+  RegistryHook(super.wallet, [EthereumAddress? registry])
+      : _initRegistry = registry ??
+            EthereumAddress.fromHex(
+                '0x000000000069E2a187AEFFb852bF3cCdC95151B2');
 
   @override
   EthereumAddress get address => getAddress();
@@ -35,16 +40,8 @@ class RegistryHook extends HookModuleInterface {
 
   final _deployedModule = RegistryHookContract(getAddress());
 
-  static EthereumAddress _initRegistry =
-      EthereumAddress.fromHex('0x000000000069E2a187AEFFb852bF3cCdC95151B2');
-
-  // must be static
-  static void setInitVars(EthereumAddress registry) {
-    _initRegistry = registry;
-  }
-
-  // must be static
-  static Uint8List getInitData() {
+  @override
+  Uint8List getInitData() {
     return _initRegistry.addressBytes;
   }
 
