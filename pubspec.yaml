@@ -8,17 +8,15 @@ issue_tracker: https://github.com/vaariance/variance-modules/issues
 publish_to: none
 
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.7.0
   flutter: ">=1.17.0"
 
 dependencies:
   flutter:
     sdk: flutter
   variance_dart:
-    git:
-      url: https://github.com/vaariance/variance-dart.git
-      ref: EIP-7579-safes
-  web3_signers: ^0.1.9
+    path: ../variance-dart
+  web3_signers: ^0.1.11
   web3dart: ^2.7.3
 
 dev_dependencies:

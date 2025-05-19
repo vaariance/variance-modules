@@ -21,8 +21,10 @@ class AbiJsonBuilder implements Builder {
 
     // Read the contents of the input file.
     final inputId = buildStep.inputId;
-    final withoutExtension =
-        inputId.path.substring(0, inputId.path.length - '.abi.json'.length);
+    final withoutExtension = inputId.path.substring(
+      0,
+      inputId.path.length - '.abi.json'.length,
+    );
     final content = json.decode(await buildStep.readAsString(inputId));
 
     // For our purposes, we assume the ABI JSON content is valid.

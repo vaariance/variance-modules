@@ -4,20 +4,30 @@ abstract class ExecutorModuleInterface extends Base7579ModuleInterface {
   ExecutorModuleInterface(super.wallet);
 
   final ContractAbi _abi = ContractAbi.fromJson(
-      '[{"type":"function","name":"getExecutorsPaginated","inputs":[{"name":"cursor","type":"address","internalType":"address"},{"name":"pageSize","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"array","type":"address[]","internalType":"address[]"},{"name":"next","type":"address","internalType":"address"}],"stateMutability":"view"}]',
-      "getExecutorsPaginated");
+    '[{"type":"function","name":"getExecutorsPaginated","inputs":[{"name":"cursor","type":"address","internalType":"address"},{"name":"pageSize","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"array","type":"address[]","internalType":"address[]"},{"name":"next","type":"address","internalType":"address"}],"stateMutability":"view"}]',
+    "getExecutorsPaginated",
+  );
 
   // calls the executor module to execute a function call on the account
   // entrypoint => account (execute) -> module (execute) -> adapter (executeFromExecutor) ->
   Future<UserOperationResponse> execute(Uint8List encodedFunctionCall) {
     final innerCallData = Contract.encodeFunctionCall(
-        'execute', address, Safe7579Abis.get('iModule'), [encodedFunctionCall]);
+      'execute',
+      address,
+      Safe7579Abis.get('iModule'),
+      [encodedFunctionCall],
+    );
     return wallet.sendTransaction(wallet.address, innerCallData);
   }
 
   Future<List<EthereumAddress>> getInstalledExecutors() async {
-    final result = await wallet.readContract(wallet.address, _abi, _abi.name,
-        params: [SENTINEL_ADDRESS, BigInt.from(100)], sender: wallet.address);
+    final result = await wallet.readContract(
+      wallet.address,
+      _abi,
+      _abi.name,
+      params: [SENTINEL_ADDRESS, BigInt.from(100)],
+      sender: wallet.address,
+    );
     final modules = List<EthereumAddress>.from(result.first);
     return modules;
   }

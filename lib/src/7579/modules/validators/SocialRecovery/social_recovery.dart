@@ -1,15 +1,23 @@
 part of '../../../../../modules.dart';
 
 class SocialRecovery extends ValidatorModuleInterface {
+  static final _deployedModule = SocialRecoveryContract(getAddress());
+
   final BigInt _initThreshold;
 
   final List<EthereumAddress> _initGuardians;
 
   SocialRecovery(super.wallet, this._initThreshold, this._initGuardians)
-      : assert(_initThreshold > BigInt.zero,
-            ModuleVariablesNotSetError('SocialRecoveryValidator', 'threshold')),
-        assert(_initGuardians.length >= _initThreshold.toInt(),
-            ModuleVariablesNotSetError('SocialRecoveryValidator', 'guardians'));
+    : assert(
+        _initThreshold > BigInt.zero,
+        ModuleVariablesNotSetError('SocialRecoveryValidator', 'threshold'),
+      ),
+      assert(
+        _initGuardians.length >= _initThreshold.toInt(),
+        ModuleVariablesNotSetError('SocialRecoveryValidator', 'guardians'),
+      ) {
+    _initGuardians.sort((a, b) => a.hex.compareTo(b.hex));
+  }
 
   @override
   EthereumAddress get address => getAddress();
@@ -27,25 +35,41 @@ class SocialRecovery extends ValidatorModuleInterface {
   String get version => "1.0.0";
 
   Future<UserOperationReceipt?> addGuardian(EthereumAddress guardian) async {
-    final calldata =
-        _deployedModule.contract.function('addGuardian').encodeCall([guardian]);
+    final calldata = _deployedModule.contract
+        .function('addGuardian')
+        .encodeCall([guardian]);
     final tx = await wallet.sendTransaction(address, calldata);
     final receipt = await tx.wait();
     return receipt;
   }
 
-  Future<List<EthereumAddress>?> getGuardians(
-      [EthereumAddress? account]) async {
+  Future<List<EthereumAddress>?> getGuardians([
+    EthereumAddress? account,
+  ]) async {
     final result = await wallet.readContract(
-        address, social_recovery_abi, 'getGuardians',
-        params: [account ?? wallet.address]);
+      address,
+      social_recovery_abi,
+      'getGuardians',
+      params: [account ?? wallet.address],
+    );
     return result.firstOrNull;
+  }
+
+  @override
+  Uint8List getInitData() {
+    return abi.encode(
+      ["uint256", "address[]"],
+      [_initThreshold, _initGuardians],
+    );
   }
 
   Future<BigInt?> guardianCount([EthereumAddress? account]) async {
     final result = await wallet.readContract(
-        address, social_recovery_abi, 'guardianCount',
-        params: [account ?? wallet.address]);
+      address,
+      social_recovery_abi,
+      'guardianCount',
+      params: [account ?? wallet.address],
+    );
     return result.firstOrNull;
   }
 
@@ -80,22 +104,18 @@ class SocialRecovery extends ValidatorModuleInterface {
 
   Future<BigInt?> threshold([EthereumAddress? account]) async {
     final result = await wallet.readContract(
-        address, social_recovery_abi, 'threshold',
-        params: [account ?? wallet.address]);
+      address,
+      social_recovery_abi,
+      'threshold',
+      params: [account ?? wallet.address],
+    );
     return result.firstOrNull;
-  }
-
-  final _deployedModule = SocialRecoveryContract(getAddress());
-
-  @override
-  Uint8List getInitData() {
-    return abi
-        .encode(["uint256", "address[]"], [_initThreshold, _initGuardians]);
   }
 
   // must be static
   static EthereumAddress getAddress() {
     return EthereumAddress.fromHex(
-        '0xA04D053b3C8021e8D5bF641816c42dAA75D8b597');
+      '0xA04D053b3C8021e8D5bF641816c42dAA75D8b597',
+    );
   }
 }

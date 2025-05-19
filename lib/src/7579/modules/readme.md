@@ -59,11 +59,6 @@ To create a new module:
 4. Register your module components with the system by calling `installModule` on the `SmartWallet` instance or `install` on the module.
 For detailed implementation examples, refer to the existing modules in each directory.
 
-### Module's InitData
-
-each module must expose 2 static functions namely `getInitData` and `getAddress`. These are crucial to allow for the retrieval of the initdata and address of the module. without instantiating the module. Especially in the case where it is needed for pre-installation in the account during deployment.
-Additionally a `setInitVars` function should be exposed to allow for the setting of the data needed to encode the initdata.
-
 ### Modules's ABI
 
 add the module abi in the same folder as the module, following the naming convention `<moduleName>.abi.json`.

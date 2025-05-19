@@ -4,8 +4,9 @@ abstract class ValidatorModuleInterface extends Base7579ModuleInterface {
   ValidatorModuleInterface(super.wallet);
 
   final ContractAbi _abi = ContractAbi.fromJson(
-      '[{"type":"function","name":"getValidatorsPaginated","inputs":[{"name":"cursor","type":"address","internalType":"address"},{"name":"pageSize","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"array","type":"address[]","internalType":"address[]"},{"name":"next","type":"address","internalType":"address"}],"stateMutability":"view"}]',
-      "getValidatorsPaginated");
+    '[{"type":"function","name":"getValidatorsPaginated","inputs":[{"name":"cursor","type":"address","internalType":"address"},{"name":"pageSize","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"array","type":"address[]","internalType":"address[]"},{"name":"next","type":"address","internalType":"address"}],"stateMutability":"view"}]',
+    "getValidatorsPaginated",
+  );
 
   // Encodes the validator's address as a 32-byte nonce key.
   ///
@@ -26,10 +27,16 @@ abstract class ValidatorModuleInterface extends Base7579ModuleInterface {
   ///
   /// Returns a [UserOperationResponse] representing the transaction status
   Future<UserOperationResponse> sendTransaction(
-      EthereumAddress to, Uint8List encodedFunctionData,
-      {EtherAmount? amount}) {
-    return wallet.sendTransaction(to, encodedFunctionData,
-        amount: amount, nonceKey: Uint256.fromList(encodeValidatorNonce()));
+    EthereumAddress to,
+    Uint8List encodedFunctionData, {
+    EtherAmount? amount,
+  }) {
+    return wallet.sendTransaction(
+      to,
+      encodedFunctionData,
+      amount: amount,
+      nonceKey: Uint256.fromList(encodeValidatorNonce()),
+    );
   }
 
   /// Sends multiple transactions in a batch through the validator module
@@ -47,13 +54,22 @@ abstract class ValidatorModuleInterface extends Base7579ModuleInterface {
     List<Uint8List> calls, {
     List<EtherAmount>? amounts,
   }) {
-    return wallet.sendBatchedTransaction(recipients, calls,
-        amounts: amounts, nonceKey: Uint256.fromList(encodeValidatorNonce()));
+    return wallet.sendBatchedTransaction(
+      recipients,
+      calls,
+      amounts: amounts,
+      nonceKey: Uint256.fromList(encodeValidatorNonce()),
+    );
   }
 
   Future<List<EthereumAddress>> getInstalledValidators() async {
-    final result = await wallet.readContract(wallet.address, _abi, _abi.name,
-        params: [SENTINEL_ADDRESS, BigInt.from(100)], sender: wallet.address);
+    final result = await wallet.readContract(
+      wallet.address,
+      _abi,
+      _abi.name,
+      params: [SENTINEL_ADDRESS, BigInt.from(100)],
+      sender: wallet.address,
+    );
     final modules = List<EthereumAddress>.from(result.first);
     return modules;
   }

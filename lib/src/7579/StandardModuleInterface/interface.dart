@@ -19,8 +19,7 @@ part 'validators.dart';
 abstract interface class Base7579ModuleInterface {
   final SmartWallet wallet;
 
-  Base7579ModuleInterface(this.wallet)
-      : assert(wallet.is7579Enabled, 'SmartWallet must be a modular account!');
+  Base7579ModuleInterface(this.wallet);
 
   // Module Name as defined in contract metadata
   String get name;
@@ -40,16 +39,24 @@ abstract interface class Base7579ModuleInterface {
   // Checks if the module is initialized
   Future<bool> isInitialized() async {
     final result = await wallet.readContract(
-        address, Safe7579Abis.get('iModule'), 'isInitialized',
-        params: [wallet.address], sender: wallet.address);
+      address,
+      Safe7579Abis.get('iModule'),
+      'isInitialized',
+      params: [wallet.address],
+      sender: wallet.address,
+    );
     return result.first;
   }
 
   // Checks if the expected module corresponds with the contract metadata
   Future<bool> isModuleType(ModuleType type) async {
     final result = await wallet.readContract(
-        address, Safe7579Abis.get('iModule'), 'isModuleType',
-        params: [BigInt.from(type.value)], sender: wallet.address);
+      address,
+      Safe7579Abis.get('iModule'),
+      'isModuleType',
+      params: [BigInt.from(type.value)],
+      sender: wallet.address,
+    );
     return result.first;
   }
 
