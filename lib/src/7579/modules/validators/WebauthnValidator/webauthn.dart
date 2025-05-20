@@ -203,6 +203,20 @@ class _WebauthnExtendedWallet extends SmartWallet {
   }
 
   @override
+  Future<UserOperationResponse> sendUserOperation(
+    UserOperation op, {
+    Uint256? nonceKey,
+  }) {
+    Logger.warning(
+      "nonceKey parameter is ignored; Validator nonce key will always be preffered",
+    );
+    nonceKey = Uint256.fromList(
+      WebauthnValidator.getAddress().addressBytes.padRightTo32Bytes(),
+    );
+    return super.sendUserOperation(op, nonceKey: nonceKey);
+  }
+
+  @override
   Future<String> generateSignature(
     UserOperation op,
     dynamic blockInfo,

@@ -16,6 +16,25 @@ abstract class ValidatorModuleInterface extends Base7579ModuleInterface {
     return address.addressBytes.padRightTo32Bytes();
   }
 
+  /// Sends Ether through the validator module using the validator's nonce key
+  /// to ensure the validator is used for validating the user operation.
+  ///
+  /// Parameters:
+  /// - [recipient]: The destination Ethereum address to send Ether to
+  /// - [amount]: The amount of Ether to send
+  ///
+  /// Returns a [UserOperationResponse] representing the transaction status
+  Future<UserOperationResponse> send(
+    EthereumAddress recipient,
+    EtherAmount amount,
+  ) {
+    return wallet.send(
+      recipient,
+      amount,
+      nonceKey: Uint256.fromList(encodeValidatorNonce()),
+    );
+  }
+
   /// Sends a single transaction through the validator module
   /// uses the validator's nonce key for all transactions in the batch.
   /// this ensures that the Account impl switches to using the validator to validate user-operations.
