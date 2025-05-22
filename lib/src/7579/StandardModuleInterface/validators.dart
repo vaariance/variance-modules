@@ -13,7 +13,7 @@ abstract class ValidatorModuleInterface extends Base7579ModuleInterface {
   /// Returns a [Uint8List] containing the validator's address padded to 32 bytes,
   /// which can be used as a unique nonce for validator operations.
   Uint8List encodeValidatorNonce() {
-    return address.addressBytes.padRightTo32Bytes();
+    return address.addressBytes.padToNBytes(24, direction: "right");
   }
 
   /// Sends Ether through the validator module using the validator's nonce key

@@ -1,7 +1,6 @@
 library;
 
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:variance_dart/variance_dart.dart';
 import 'package:variance_modules/src/7579/errors.dart';
 import 'package:web3_signers/web3_signers.dart';
