@@ -3,15 +3,18 @@ part of '../../../../../modules.dart';
 class RegistryHook extends HookModuleInterface {
   static final _deployedModule = RegistryHookContract(getAddress());
 
-  final EthereumAddress _initRegistry;
+  final Address _initRegistry;
 
-  RegistryHook(super.wallet, [EthereumAddress? registry])
+  RegistryHook(super.wallet, [Address? registry])
     : _initRegistry =
           registry ??
-          EthereumAddress.fromHex('0x000000000069E2a187AEFFb852bF3cCdC95151B2');
+          Address.fromHex('0x000000000069E2a187AEFFb852bF3cCdC95151B2');
 
+  ///////////////////////////////////////////////////////////////
+  //            GETTERS
+  ///////////////////////////////////////////////////////////////
   @override
-  EthereumAddress get address => getAddress();
+  Address get address => getAddress();
 
   @override
   Uint8List get initData => getInitData();
@@ -25,34 +28,40 @@ class RegistryHook extends HookModuleInterface {
   @override
   String get version => '1.0.0';
 
+  ///////////////////////////////////////////////////////////////
+  //            READS
+  ///////////////////////////////////////////////////////////////
   @override
   Uint8List getInitData() {
-    return _initRegistry.addressBytes;
+    return _initRegistry.value;
   }
 
-  Future<EthereumAddress?> registry([EthereumAddress? account]) async {
-    final result = await wallet.readContract(
+  Future<Address?> registry([Address? account]) async {
+    final result = await contract.readContract(
       address,
       registry_hook_abi,
       'registry',
-      params: [account ?? wallet.address],
+      params: [account ?? contract.address],
     );
     return result.firstOrNull;
   }
 
-  Future<UserOperationReceipt?> setRegistry(EthereumAddress registry) async {
+  //////////////////////////////////////////////////////////////////
+  //            WRITES
+  ///////////////////////////////////////////////////////////////
+  Future<UserOperationReceipt?> setRegistry(Address registry) async {
     final calldata = _deployedModule.contract
         .function('setRegistry')
         .encodeCall([registry]);
-    final tx = await wallet.sendTransaction(address, calldata);
+    final tx = await contract.sendTransaction(address, calldata);
     final receipt = await tx.wait();
     return receipt;
   }
 
-  // must be static
-  static EthereumAddress getAddress() {
-    return EthereumAddress.fromHex(
-      '0x0ac6160DBA30d665cCA6e6b6a2CDf147DC3dED22',
-    );
+  //////////////////////////////////////////////////////////////////
+  //            STATIC METHODS
+  ///////////////////////////////////////////////////////////////
+  static Address getAddress() {
+    return Address.fromHex('0x0ac6160DBA30d665cCA6e6b6a2CDf147DC3dED22');
   }
 }

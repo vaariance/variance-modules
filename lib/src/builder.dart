@@ -39,7 +39,10 @@ class AbiJsonBuilder implements Builder {
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // Generated from ${inputId.path}
 
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:web3dart/web3dart.dart';
+import 'package:web3_signers/web3_signers.dart';
 
 /// The ABI string exported from the original .abi.json file.
 final ContractAbi ${fileName}_abi = ContractAbi.fromJson('${jsonEncode(content)}', '$fileName');
@@ -49,7 +52,7 @@ final ContractAbi ${fileName}_abi = ContractAbi.fromJson('${jsonEncode(content)}
 class $className {
   final DeployedContract contract;
 
-  $className(EthereumAddress address)
+  $className(Address address)
       : contract = DeployedContract(${fileName}_abi, address);
 }
 ''';

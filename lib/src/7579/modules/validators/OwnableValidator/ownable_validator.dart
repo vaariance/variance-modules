@@ -5,22 +5,25 @@ class OwnableValidator extends ValidatorModuleInterface {
 
   final BigInt _initThreshold;
 
-  final List<EthereumAddress> _initOwners;
+  final List<Address> _initOwners;
 
   OwnableValidator(super.wallet, this._initThreshold, this._initOwners)
     : assert(
         _initThreshold > BigInt.zero,
-        ModuleVariablesNotSetError('OwnableValidator', 'threshold'),
+        ModuleVariableError('OwnableValidator', 'threshold'),
       ),
       assert(
         _initOwners.length >= _initThreshold.toInt(),
-        ModuleVariablesNotSetError('OwnableValidator', 'owners'),
+        ModuleVariableError('OwnableValidator', 'owners'),
       ) {
-    _initOwners.sort((a, b) => a.hex.compareTo(b.hex));
+    _initOwners.sort((a, b) => a.with0x.compareTo(b.with0x));
   }
 
+  ///////////////////////////////////////////////////////////////
+  //            GETTERS
+  ///////////////////////////////////////////////////////////////
   @override
-  EthereumAddress get address => getAddress();
+  Address get address => getAddress();
 
   @override
   Uint8List get initData => getInitData();
@@ -34,7 +37,65 @@ class OwnableValidator extends ValidatorModuleInterface {
   @override
   String get version => "1.0.0";
 
-  Future<UserOperationReceipt?> addOwner(EthereumAddress owner) async {
+  ///////////////////////////////////////////////////////////////
+  //            READS
+  ///////////////////////////////////////////////////////////////
+  @override
+  Uint8List getInitData() {
+    return abi.encode(["uint256", "address[]"], [_initThreshold, _initOwners]);
+  }
+
+  Future<List<Address>?> getOwners([Address? account]) async {
+    final result = await contract.readContract(
+      address,
+      ownable_validator_abi,
+      'getOwners',
+      params: [account ?? contract.address],
+    );
+    return result.firstOrNull;
+  }
+
+  Future<BigInt?> ownerCount([Address? account]) async {
+    final result = await contract.readContract(
+      address,
+      ownable_validator_abi,
+      'ownerCount',
+      params: [account ?? contract.address],
+    );
+    return result.firstOrNull;
+  }
+
+  Future<BigInt?> threshold([Address? account]) async {
+    final result = await contract.readContract(
+      address,
+      ownable_validator_abi,
+      'threshold',
+      params: [account ?? contract.address],
+    );
+    return result.firstOrNull;
+  }
+
+  Future<bool> validateSignatureWithData(
+    Uint8List hash,
+    Uint8List signature,
+    Uint8List data,
+  ) async {
+    final result = await contract.readContract(
+      address,
+      ownable_validator_abi,
+      'validateSignatureWithData',
+      params: [hash, signature, data],
+    );
+    return result.first;
+  }
+
+  //////////////////////////////////////////////////////////////////
+  //            WRITES
+  ///////////////////////////////////////////////////////////////
+  Future<UserOperationReceipt?> addOwner(
+    Address owner, [
+    SmartContract? service,
+  ]) async {
     final owners = await getOwners() ?? [];
     final currentOwnerIndex = owners.indexOf(owner);
 
@@ -45,41 +106,19 @@ class OwnableValidator extends ValidatorModuleInterface {
     final calldata = _deployedModule.contract.function('addOwner').encodeCall([
       owner,
     ]);
-    final tx = await wallet.sendTransaction(address, calldata);
+    final tx = await (service ?? contract).sendTransaction(address, calldata);
     final receipt = await tx.wait();
     return receipt;
   }
 
-  @override
-  Uint8List getInitData() {
-    return abi.encode(["uint256", "address[]"], [_initThreshold, _initOwners]);
-  }
-
-  Future<List<EthereumAddress>?> getOwners([EthereumAddress? account]) async {
-    final result = await wallet.readContract(
-      address,
-      ownable_validator_abi,
-      'getOwners',
-      params: [account ?? wallet.address],
-    );
-    return result.firstOrNull;
-  }
-
-  Future<BigInt?> ownerCount([EthereumAddress? account]) async {
-    final result = await wallet.readContract(
-      address,
-      ownable_validator_abi,
-      'ownerCount',
-      params: [account ?? wallet.address],
-    );
-    return result.firstOrNull;
-  }
-
-  Future<UserOperationReceipt?> removeOwner(EthereumAddress owner) async {
+  Future<UserOperationReceipt?> removeOwner(
+    Address owner, [
+    SmartContract? service,
+  ]) async {
     final owners = await getOwners() ?? [];
     final currentOwnerIndex = owners.indexOf(owner);
 
-    EthereumAddress prevOwner;
+    Address prevOwner;
     if (currentOwnerIndex == -1) {
       throw Exception('Owner not found');
     } else if (currentOwnerIndex == 0) {
@@ -90,60 +129,49 @@ class OwnableValidator extends ValidatorModuleInterface {
     final calldata = _deployedModule.contract
         .function('removeOwner')
         .encodeCall([prevOwner, owner]);
-    final tx = await wallet.sendTransaction(address, calldata);
+    final tx = await (service ?? contract).sendTransaction(address, calldata);
     final receipt = await tx.wait();
     return receipt;
   }
 
-  Future<UserOperationReceipt?> setThreshold(int threshold) async {
+  Future<UserOperationReceipt?> setThreshold(
+    int threshold, [
+    SmartContract? service,
+  ]) async {
     final calldata = _deployedModule.contract
         .function('setThreshold')
         .encodeCall([BigInt.from(threshold)]);
-    final tx = await wallet.sendTransaction(address, calldata);
+    final tx = await (service ?? contract).sendTransaction(address, calldata);
     final receipt = await tx.wait();
     return receipt;
   }
 
-  Future<BigInt?> threshold([EthereumAddress? account]) async {
-    final result = await wallet.readContract(
-      address,
-      ownable_validator_abi,
-      'threshold',
-      params: [account ?? wallet.address],
+  @override
+  Future<UserOperationResponse> proxyTransaction(
+    List<Address> recipients,
+    List<Uint8List> calls, {
+    List<BigInt>? amountsInWei,
+  }) {
+    return (contract as SmartWallet).sendBatchedTransaction(
+      recipients,
+      calls,
+      amountsInWei: amountsInWei,
     );
-    return result.firstOrNull;
   }
 
-  Future<bool> validateSignatureWithData(
-    Uint8List hash,
-    Uint8List signature,
-    Uint8List data,
-  ) async {
-    final result = await wallet.readContract(
-      address,
-      ownable_validator_abi,
-      'validateSignatureWithData',
-      params: [hash, signature, data],
-    );
-    return result.first;
-  }
-
-  static Uint8List encodeValidationData(
-    int threshold,
-    List<EthereumAddress> owners,
-  ) {
-    owners.sort((a, b) => a.hex.compareTo(b.hex));
+  //////////////////////////////////////////////////////////////////
+  //            STATIC METHODS
+  ///////////////////////////////////////////////////////////////
+  static Uint8List encodeValidationData(int threshold, List<Address> owners) {
+    owners.sort((a, b) => a.with0x.compareTo(b.with0x));
     return abi.encode(
       ["uint256", "address[]"],
       [BigInt.from(threshold), owners],
     );
   }
 
-  // must be static
-  static EthereumAddress getAddress() {
-    return EthereumAddress.fromHex(
-      '0x2483DA3A338895199E5e538530213157e931Bf06',
-    );
+  static Address getAddress() {
+    return Address.fromHex('0x2483DA3A338895199E5e538530213157e931Bf06');
   }
 
   static Uint8List getMockSignature(int threshold) {

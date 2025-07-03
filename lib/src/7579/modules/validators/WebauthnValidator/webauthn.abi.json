@@ -10,7 +10,6 @@
     "outputs": [],
     "stateMutability": "nonpayable"
   },
-
   {
     "type": "function",
     "name": "generateCredentialId",

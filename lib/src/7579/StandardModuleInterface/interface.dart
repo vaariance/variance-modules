@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:variance_dart/variance_dart.dart';
 import 'package:web3_signers/web3_signers.dart';
 import 'package:web3dart/web3dart.dart';
@@ -9,9 +8,13 @@ part 'hooks.dart';
 part 'validators.dart';
 
 abstract interface class Base7579ModuleInterface {
-  final SmartWallet wallet;
+  final SmartWallet _wallet;
 
-  Base7579ModuleInterface(this.wallet);
+  Base7579ModuleInterface(this._wallet);
+
+  // returns an interface with only contract related functions
+  @protected
+  SmartContract get contract => _wallet;
 
   // Module Name as defined in contract metadata
   String get name;
@@ -23,50 +26,33 @@ abstract interface class Base7579ModuleInterface {
   ModuleType get type;
 
   // Module address
-  EthereumAddress get address;
+  Address get address;
 
   // Returns the module intialization data
   Uint8List get initData;
 
   // Checks if the module is initialized
   Future<bool> isInitialized() async {
-    final result = await wallet.readContract(
+    final result = await _wallet.readContract(
       address,
       Safe7579Abis.get('iModule'),
       'isInitialized',
-      params: [wallet.address],
-      sender: wallet.address,
+      params: [_wallet.address],
+      sender: _wallet.address,
     );
     return result.first;
   }
 
   // Checks if the expected module corresponds with the contract metadata
   Future<bool> isModuleType(ModuleType type) async {
-    final result = await wallet.readContract(
+    final result = await _wallet.readContract(
       address,
       Safe7579Abis.get('iModule'),
       'isModuleType',
       params: [BigInt.from(type.value)],
-      sender: wallet.address,
+      sender: _wallet.address,
     );
     return result.first;
-  }
-
-  // Installs self in the [SmartWallet] instance
-  // reverts if already installed
-  Future<UserOperationReceipt?> install() async {
-    final tx = await wallet.installModule(type, address, initData);
-    final receipt = await tx.wait();
-    return receipt;
-  }
-
-  // Uninstalls self from the [SmartWallet] instance
-  // reverts if not installed
-  Future<UserOperationReceipt?> uninstall([Uint8List? context]) async {
-    final deInitData = await getDeInitData(context);
-    final tx = await wallet.uninstallModule(type, address, deInitData);
-    final receipt = await tx.wait();
-    return receipt;
   }
 
   /// Returns the initialization data required for this module

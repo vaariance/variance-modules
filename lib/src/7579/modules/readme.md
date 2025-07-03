@@ -56,7 +56,7 @@ To create a new module:
 1. Identify which components your module needs
 2. Create appropriate files in the respective directories
 3. Implement the required interfaces
-4. Register your module components with the system by calling `installModule` on the `SmartWallet` instance or `install` on the module.
+4. Register your module components with the system by calling `installModule` on the `SmartWallet`.
 For detailed implementation examples, refer to the existing modules in each directory.
 
 ### Modules's ABI

@@ -5,29 +5,32 @@ class WebauthnValidator extends ValidatorModuleInterface {
 
   final BigInt _initThreshold;
 
-  final PassKeyPair _keyPair;
+  final Set<PassKeyPair> _keyPairs;
 
   WebauthnValidator(
     SmartWallet wallet,
     this._initThreshold,
-    this._keyPair, {
+    this._keyPairs, {
     PassKeySigner? signer,
     bool uvRequired = true,
   }) : assert(
-         _initThreshold == BigInt.one,
-         ModuleVariablesNotSetError('WebAuthnValidator', 'threshold'),
+         _initThreshold.toInt() == _keyPairs.length,
+         ModuleVariableError('WebAuthnValidator', 'threshold'),
        ),
        super(
-         _WebauthnExtendedWallet.fromWallet(
+         _WebauthnWalletExtension.fromWallet(
            wallet,
-           _keyPair,
+           _keyPairs,
            signer,
            uvRequired,
          ),
        );
 
+  ///////////////////////////////////////////////////////////////
+  //            GETTERS
+  ///////////////////////////////////////////////////////////////
   @override
-  EthereumAddress get address => getAddress();
+  Address get address => getAddress();
 
   @override
   Uint8List get initData => getInitData();
@@ -41,88 +44,77 @@ class WebauthnValidator extends ValidatorModuleInterface {
   @override
   String get version => "1.0.0";
 
-  Future<UserOperationReceipt?> addCredential(PassKeyPair keypair) async {
-    final calldata = _deployedModule.contract
-        .function('addCredential')
-        .encodeCall([
-          keypair.authData.publicKey.$1.value,
-          keypair.authData.publicKey.$2.value,
-          (wallet as _WebauthnExtendedWallet).uvRequired,
-        ]);
-    final tx = await wallet.sendTransaction(address, calldata);
-    final receipt = await tx.wait();
-    return receipt;
+  bool get _uvRequired => (contract as _WebauthnWalletExtension).uvRequired;
+
+  ///////////////////////////////////////////////////////////////
+  //            READS
+  ///////////////////////////////////////////////////////////////
+  @override
+  Uint8List getInitData() {
+    return parseInitData(_initThreshold, _keyPairs);
   }
 
   Future<Uint8List?> generateCredentialId(
     PassKeyPair keypair, [
-    EthereumAddress? account,
+    Address? account,
   ]) async {
-    final result = await wallet.readContract(
+    final result = await contract.readContract(
       address,
       webauthn_abi,
       'generateCredentialId',
       params: [
         keypair.authData.publicKey.$1.value,
         keypair.authData.publicKey.$2.value,
-        (wallet as _WebauthnExtendedWallet).uvRequired,
-        account ?? wallet.address,
+        _uvRequired,
+        account ?? contract.address,
       ],
     );
     return result.firstOrNull;
   }
 
-  Future<BigInt?> getCredentialCount([EthereumAddress? account]) async {
-    final result = await wallet.readContract(
+  Future<BigInt?> getCredentialCount([Address? account]) async {
+    final result = await contract.readContract(
       address,
       webauthn_abi,
       'getCredentialCount',
-      params: [account ?? wallet.address],
+      params: [account ?? contract.address],
     );
     return result.firstOrNull;
   }
 
-  Future<List<Uint8List>?> getCredentialIds([EthereumAddress? account]) async {
-    final result = await wallet.readContract(
+  Future<List<Uint8List>?> getCredentialIds([Address? account]) async {
+    final result = await contract.readContract(
       address,
       webauthn_abi,
       'getCredentialIds',
-      params: [account ?? wallet.address],
+      params: [account ?? contract.address],
     );
     return result.firstOrNull;
   }
 
   Future<(BigInt, BigInt, bool)?> getCredentialInfo(
     Uint8List credentialId, [
-    EthereumAddress? account,
+    Address? account,
   ]) async {
-    final result = await wallet.readContract(
+    final result = await contract.readContract(
       address,
       webauthn_abi,
       'getCredentialInfo',
-      params: [credentialId, account ?? wallet.address],
+      params: [credentialId, account ?? contract.address],
     );
     return result.firstOrNull;
   }
 
-  @override
-  Uint8List getInitData() {
-    return parseInitData(_initThreshold, _keyPair);
-  }
-
-  Future<bool?> hasCredential(
-    PassKeyPair keypair, [
-    EthereumAddress? account,
-  ]) async {
-    final result = await wallet.readContract(
+  Future<bool?> hasCredential(PassKeyPair keypair, [Address? account]) async {
+    final result = await contract.readContract(
       address,
       webauthn_abi,
       'hasCredential',
       params: [
         keypair.authData.publicKey.$1.value,
         keypair.authData.publicKey.$2.value,
-        (wallet as _WebauthnExtendedWallet).uvRequired,
-        account ?? wallet.address,
+        _uvRequired,
+        account ?? contract.address,
       ],
     );
     return result.firstOrNull;
@@ -130,59 +122,97 @@ class WebauthnValidator extends ValidatorModuleInterface {
 
   Future<bool?> hasCredentialById(
     Uint8List credentialId, [
-    EthereumAddress? account,
+    Address? account,
   ]) async {
-    final result = await wallet.readContract(
+    final result = await contract.readContract(
       address,
       webauthn_abi,
       'hasCredentialById',
-      params: [credentialId, account ?? wallet.address],
+      params: [credentialId, account ?? contract.address],
     );
     return result.firstOrNull;
   }
 
-  Future<UserOperationReceipt?> removeCredential(PassKeyPair keypair) async {
+  Future<BigInt?> threshold([Address? account]) async {
+    final result = await contract.readContract(
+      address,
+      webauthn_abi,
+      'threshold',
+      params: [account ?? contract.address],
+    );
+    return result.firstOrNull;
+  }
+
+  //////////////////////////////////////////////////////////////////
+  //            WRITES
+  ///////////////////////////////////////////////////////////////
+  Future<UserOperationReceipt?> addCredential(
+    PassKeyPair keypair, [
+    SmartContract? sc,
+  ]) async {
+    final calldata = _deployedModule.contract
+        .function('addCredential')
+        .encodeCall([
+          keypair.authData.publicKey.$1.value,
+          keypair.authData.publicKey.$2.value,
+          _uvRequired,
+        ]);
+    final tx = await (sc ?? contract).sendTransaction(address, calldata);
+    final receipt = await tx.wait();
+    return receipt;
+  }
+
+  Future<UserOperationReceipt?> removeCredential(
+    PassKeyPair keypair, [
+    SmartContract? sc,
+  ]) async {
     final calldata = _deployedModule.contract
         .function('removeCredential')
         .encodeCall([
           keypair.authData.publicKey.$1.value,
           keypair.authData.publicKey.$2.value,
-          (wallet as _WebauthnExtendedWallet).uvRequired,
+          _uvRequired,
         ]);
-    final tx = await wallet.sendTransaction(address, calldata);
+    final tx = await (sc ?? contract).sendTransaction(address, calldata);
     final receipt = await tx.wait();
     return receipt;
   }
 
-  Future<UserOperationReceipt?> setThreshold(int threshold) async {
+  Future<UserOperationReceipt?> setThreshold(
+    int threshold, [
+    SmartContract? sc,
+  ]) async {
     final calldata = _deployedModule.contract
         .function('setThreshold')
         .encodeCall([BigInt.from(threshold)]);
-    final tx = await wallet.sendTransaction(address, calldata);
+    final tx = await (sc ?? contract).sendTransaction(address, calldata);
     final receipt = await tx.wait();
     return receipt;
   }
 
-  Future<BigInt?> threshold([EthereumAddress? account]) async {
-    final result = await wallet.readContract(
-      address,
-      webauthn_abi,
-      'threshold',
-      params: [account ?? wallet.address],
-    );
-    return result.firstOrNull;
-  }
-
-  // must be static
-  static EthereumAddress getAddress() {
-    return EthereumAddress.fromHex(
-      '0x47c3A1C003d1094A1B21C4d59ed286a224Fb8Fa3',
+  @override
+  Future<UserOperationResponse> proxyTransaction(
+    List<Address> recipients,
+    List<Uint8List> calls, {
+    List<BigInt>? amountsInWei,
+  }) {
+    return (contract as _WebauthnWalletExtension).sendBatchedTransaction(
+      recipients,
+      calls,
+      amountsInWei: amountsInWei,
     );
   }
 
-  static Uint8List parseInitData([
-    BigInt? threshold,
-    PassKeyPair? credentials,
+  //////////////////////////////////////////////////////////////////
+  //            STATIC METHODS
+  ///////////////////////////////////////////////////////////////
+  static Address getAddress() {
+    return Address.fromHex('0x47c3A1C003d1094A1B21C4d59ed286a224Fb8Fa3');
+  }
+
+  static Uint8List parseInitData(
+    BigInt threshold,
+    Set<PassKeyPair> credentials, [
     bool? uvRequired = true,
   ]) {
     return abi.encode(
@@ -190,158 +220,15 @@ class WebauthnValidator extends ValidatorModuleInterface {
       [
         threshold,
         [
-          [
-            credentials?.authData.publicKey.$1.value,
-            credentials?.authData.publicKey.$2.value,
-            uvRequired,
-          ],
+          ...credentials.map(
+            (credential) => [
+              credential.authData.publicKey.$1.value,
+              credential.authData.publicKey.$2.value,
+              uvRequired,
+            ],
+          ),
         ],
       ],
     );
-  }
-}
-
-class _WebauthnExtendedWallet extends SmartWallet {
-  final PassKeyPair _keyPair;
-
-  @protected
-  final bool uvRequired;
-
-  _WebauthnExtendedWallet.internal(super._state, this._keyPair, this.uvRequired)
-    : assert(
-        _state.signer is PassKeySigner,
-        "[WebauthnValidator]: SmartWallet signer must be an instance of PasskeySigner",
-      );
-
-  factory _WebauthnExtendedWallet.fromWallet(
-    SmartWallet wallet,
-    PassKeyPair keyPair, [
-    PassKeySigner? signer,
-    bool uvRequired = true,
-  ]) {
-    if (wallet is _WebauthnExtendedWallet) {
-      return wallet;
-    }
-
-    return _WebauthnExtendedWallet.internal(
-      wallet.state.copyWith(signer: signer),
-      keyPair,
-      uvRequired,
-    );
-  }
-
-  @override
-  Future<UserOperation> prepareUserOperation(
-    UserOperation op, {
-    Uint256? nonceKey,
-    String? signature,
-  }) {
-    Logger.warning(
-      "nonceKey parameter is ignored; WebauthnValidator nonceKey will always be preffered",
-    );
-    nonceKey = Uint256.fromList(
-      WebauthnValidator.getAddress().addressBytes.padToNBytes(
-        24,
-        direction: "right",
-      ),
-    );
-    Logger.warning(
-      "signer's dummySignature is ignored; WebauthnValidator generated dummySignature is preffered",
-    );
-    final dummySignature = _getDummySignature();
-    return super.prepareUserOperation(
-      op,
-      nonceKey: nonceKey,
-      signature: dummySignature,
-    );
-  }
-
-  @override
-  Future<String> generateSignature(
-    UserOperation op,
-    dynamic blockInfo,
-    int? index,
-  ) async {
-    final signer = state.signer as PassKeySigner;
-    final hash = op.hash(chain);
-    final sig = await signer.signToPasskeySignature(
-      hash,
-      knownCredentials: [
-        signer.credentialIdToType(_keyPair.authData.rawCredential),
-      ],
-    );
-    final magic = await signer.isValidPassKeySignature(
-      hash,
-      sig,
-      _keyPair,
-      Addresses.p256VerifierAddress,
-      chain.jsonRpcUrl!,
-    );
-    Logger.conditionalError(
-      magic != ERC1271IsValidSignatureResponse.success,
-      "Off-Chain Signature Validation failed! - Operation will revert with reason AA24.",
-    );
-    final credId = _getCredentialId();
-    final webauthnSignature = _encodeSignature(credId, sig);
-    return hexlify(webauthnSignature);
-  }
-
-  Uint8List _getCredentialId() {
-    return keccak256(
-      abi.encode(
-        ["uint256", "uint256", "bool", "address"],
-        [
-          _keyPair.authData.publicKey.$1.value,
-          _keyPair.authData.publicKey.$2.value,
-          uvRequired,
-          address,
-        ],
-      ),
-    );
-  }
-
-  Uint8List _encodeSignature(Uint8List id, PassKeySignature sig) {
-    return abi.encode(
-      ["bytes32[]", "bool", "(bytes,string,uint256,uint256,uint256,uint256)[]"],
-      [
-        [id],
-        true, // usePrecompile is always true
-        [
-          [
-            sig.authData,
-            sig.clientDataJSON,
-            BigInt.from(sig.challengePos - 13), // `"challenge":"`
-            BigInt.from(sig.typePos - 8), // `"type":"`
-            sig.signature.$1.value,
-            sig.signature.$2.value,
-          ],
-        ],
-      ],
-    );
-  }
-
-  String _getDummySignature() {
-    final uv = uvRequired ? 0x04 : 0x01;
-    final challenge = "p5aV2uHXr0AOqUk7HQitvi-Ny1p5aV2uHXr0AOqUk7H";
-    final dummyCdField =
-        '{"type":"webauthn.get","challenge":$challenge,"origin":"https://variance.space"}';
-    final dummyAdField = Uint8List(37);
-    dummyAdField.fillRange(0, dummyAdField.length, 0xfe);
-    dummyAdField[32] = uv;
-
-    final credId = _getCredentialId();
-    final sig = PassKeySignature(
-      "null",
-      credId,
-      (Uint256.fromHex("0x${'ec' * 32}"), Uint256.fromHex("0x${'d5a' * 21}f")),
-      dummyAdField,
-      dummyCdField,
-      dummyCdField.indexOf(challenge),
-      dummyCdField.indexOf('webauthn.get'),
-      "null",
-    );
-
-    final webauthnSignature = _encodeSignature(credId, sig);
-    return hexlify(webauthnSignature);
   }
 }
